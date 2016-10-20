@@ -379,6 +379,7 @@ class AmazonS3FileBackend extends FileBackendStore {
 
 
 	function doPrepareInternal( $container, $dir, array $params ) {
+		global $wgAWSUsePublicUrls;
 		$status = Status::newGood();
 
 		if( !$this->client->doesBucketExist( $container ) ) {
@@ -399,8 +400,12 @@ class AmazonS3FileBackend extends FileBackendStore {
 			'listing' => empty( $params['noListing'] )
 		);
 
-		$status->merge( $this->doPublishInternal( $container, $dir, $params ) );
-		$status->merge( $this->doSecureInternal( $container, $dir, $params ) );
+		if (!empty($wgAWSUsePublicUrls) && $wgAWSUsePublicUrls) {
+			$status->merge( $this->doPublishInternal( $container, $dir, ['access' => 1, 'listing' => 1] ) );
+		} else {
+			$status->merge( $this->doPublishInternal( $container, $dir, $params ) );
+			$status->merge( $this->doSecureInternal( $container, $dir, $params ) );
+		}
 
 		return $status;
 	}
